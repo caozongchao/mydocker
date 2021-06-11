@@ -1,0 +1,237 @@
+version: '3.2'
+services:
+    php:
+        build: 
+            context: ./php
+            args:
+                - CHANGE_SOURCE=${CHANGE_SOURCE}
+        image: php
+        container_name: php
+        expose:
+            - "9000"
+        ports:
+            - "7272:7272" #workman聊天室
+            - "55151:55151" #workman聊天室    
+        volumes:
+            - ../../www:/data/www:rw
+            - ./php/php.ini:/usr/local/etc/php/php.ini:ro # 当前php配置文件；可以拷贝修改php-dev.ini为想要的配置
+            - ./php/php-fpm.conf:/usr/local/etc/php-fpm.conf:ro
+            - ../logs/php:/var/log/php-fpm:rw
+        restart: always
+        command: php-fpm
+        extra_hosts:
+          - "api.sas.test:192.168.56.101"
+          - "api.bmp.test:192.168.56.101"
+          - "api.mam.test:192.168.56.101"
+
+    nginx:
+        build: ./nginx
+        image: nginx
+        container_name: nginx
+        links:
+            - php:php
+        volumes:
+            - ../../www:/data/www:rw
+            - ./nginx/conf.d:/etc/nginx/conf.d:ro
+            - ./nginx/certs/:/etc/nginx/certs
+            - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+            - ../logs/nginx:/var/log/nginx
+        ports:
+            - "80:80" #宿主端口：容器端口
+        restart: always
+        depends_on:
+            - php
+        command: nginx -g 'daemon off;'
+
+    mysql:
+        build: ./mysql
+        image: mysql
+        container_name: mysql
+        ports:
+            - "3306:3306"
+        volumes:
+            - ../data/mysql:/var/lib/mysql:rw
+            - ../logs/mysql:/var/lib/mysql-logs:rw
+            - ./mysql/my.cnf:/etc/mysql/my.cnf:ro
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+        restart: always
+        depends_on:
+            - php
+        command: "--character-set-server=utf8"
+
+    redis:
+        build: ./redis
+        image: redis
+        container_name: redis
+        ports:
+            - "${REDIS_PORT}:6379"
+        volumes:
+            - ../data/redis:/data
+        restart: always
+        depends_on:
+            - php
+
+    python:
+        build: ./python
+        image: python
+        container_name: python
+        volumes:
+            - ../../pythonCode:/usr/src/app:rw
+            - ../logs/scrapyd:/usr/src/app/scrapyd/logs:rw
+        ports:
+            # - '81:81'
+            - '6800:6800' #scrapyd
+            - '8000:8000' #gerapy
+            - '3000:3000' #gerapy
+        restart: always
+        stdin_open: true
+        tty: true
+        links:
+            - mysql
+            - redis
+
+    beanstalk:
+        build: 
+            context: ./beanstalk
+            args:
+                - CHANGE_SOURCE=${CHANGE_SOURCE}
+        image: beanstalk
+        container_name: beanstalk
+        ports:
+            - "11300:11300"
+        restart: always
+        privileged: true
+        depends_on:
+            - php   
+
+    golang:
+        build: ./golang
+        image: golang
+        container_name: golang
+        ports:
+          - "8088:8088"
+        restart: always
+        links:
+          - mysql
+          - redis
+        volumes:
+          - ../../goCode:/go
+        tty: true         
+
+    # elasticsearch:
+    #     build: ./elasticsearch
+    #     image: elasticsearch
+    #     container_name: elasticsearch
+    #     volumes:
+    #         - ./elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+    #         - ../data/elasticsearch:/usr/share/elasticsearch/data:rw
+    #     environment:
+    #         - cluster.name=docker-cluster
+    #         - bootstrap.memory_lock=true
+    #         - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    #     ulimits:
+    #         memlock:
+    #             soft: -1
+    #             hard: -1
+    #     ports:
+    #         - "9200:9200"
+    #     depends_on:
+    #         - php
+
+    # elasticsearch-head:
+    #     image: mobz/elasticsearch-head:5
+    #     container_name: elasticsearch-head
+    #     ports:
+    #         - "9100:9100"
+    #     depends_on:
+    #       - elasticsearch
+
+    # logstash:
+    #     build: ./logstash
+    #     image: logstash
+    #     container_name: logstash
+    #     volumes:
+    #         - ./logstash/templates:/usr/share/logstash/templates:ro
+    #         - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+    #         - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+    #     ports:
+    #         - "5000:5000"
+    #         - "9600:9600"
+    #     environment:
+    #         LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    #     depends_on:
+    #         - elasticsearch 
+
+    # splash:
+    #     image: scrapinghub/splash
+    #     container_name: splash
+    #     ports:
+    #         - "8050:8050"
+    #         - "5023:5023"
+    #     restart: always
+
+    #https://github.com/jhao104/proxy_pool
+    #Workdir proxy_pool
+    #docker build -t proxy_pool .
+    proxy_pool:
+        image: jhao104/proxy_pool
+        container_name: proxy_pool
+        ports:
+            - "5010:5010"
+        links:
+            - redis
+        environment:
+            DB_CONN: "redis://:111111@redis:6379/0"
+
+    # rabbitmq:
+    #     build: ./rabbitmq
+    #     image: rabbitmq
+    #     container_name: rabbitmq
+    #     ports:
+    #         - "5672:5672"
+    #         - "15672:15672"
+    #     privileged: true
+    #     environment:
+    #         - RABBITMQ_DEFAULT_USER=test
+    #         - RABBITMQ_DEFAULT_PASS=test
+    #     depends_on:
+    #         - php
+
+    # memcached:
+    #     build: ./memcached
+    #     image: memcached
+    #     container_name: memcached
+    #     volumes:
+    #         - ../data/memcached:/var/lib/memcached
+    #     ports:
+    #         - "11211:11211"
+    #     depends_on:
+    #         - php
+
+    # mongodb:
+    #     build: ./mongodb
+    #     image: mongodb
+    #     container_name: mongodb
+    #     ports:
+    #         - "27017:27017"
+    #     # # 要求磁盘必须非NTFS格式才可以
+    #     # volumes:
+    #     #     - ../data/mongo/configdb:/data/configdb
+    #     #     - ../data/mongo/db:/data/db
+    #     # command: mongod --auth
+    #     restart: always
+    #     stdin_open: true
+    #     tty: true
+    #     # depends_on:
+    #     #    - python
+
+    # anyproxy:
+    #     build: ./anyproxy
+    #     image: anyproxy
+    #     container_name: anyproxy
+    #     volumes:
+    #         - ../logs/anyproxy:/anyproxy:rw
+    #     ports:
+    #         - "8001:8001"
+    #         - "8002:8002"

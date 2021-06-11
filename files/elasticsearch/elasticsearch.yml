@@ -1,0 +1,15 @@
+cluster.name: "docker-cluster"
+network.host: 0.0.0.0
+
+# network.bind_host 192.168.1.11 140.143.195.224
+# network.publish_host 192.168.1.10 _non_loopback:ipv4_ local
+
+# minimum_master_nodes need to be explicitly set when bound on a public IP
+# set to 1 to allow single node clusters
+# Details: https://github.com/elastic/elasticsearch/pull/17288
+discovery.zen.minimum_master_nodes: 1
+
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+# http.cors.allow-origin: /https?:\/\/(localhost|otherhost.org)(:[0-9]+)?/
+# http.cors.allow-origin: /http?:\/\/192.168.10.139(:[0-9]+)?/

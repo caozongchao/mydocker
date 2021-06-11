@@ -1,0 +1,40 @@
+{
+  "index_patterns" : "gerapy_*",
+  "settings" : {
+    "number_of_shards": 5,
+    "number_of_replicas": 0
+  },
+  "mappings" : {
+    "document" : {
+      "dynamic_templates" : [
+        {
+          "string_fields" : {
+            "match" : "*",
+            "match_mapping_type" : "string",
+            "mapping" : {
+              "type" : "keyword", "index" : "false", "doc_values" : true
+            }
+          }
+        }
+      ],
+      "properties" : {
+        "@timestamp": { "type": "date" },
+        "@version": { "type": "keyword", "index": "false" },
+        "id" : {
+          "type" : "text",
+          "index" : "false"
+        },
+        "title" : {
+          "type" : "text",
+          "analyzer": "ik_max_word",
+          "search_analyzer": "ik_smart"
+        },
+        "content" : {
+          "type" : "text",
+          "analyzer": "ik_max_word",
+          "search_analyzer": "ik_smart"
+        }
+      }
+    }
+  }
+}
