@@ -1,19 +1,21 @@
-FROM node:6.9.2
-ENV ANYPROXY_VERSION=3.10.3
+FROM node:14.17.6
+ENV ANYPROXY_VERSION=4.1.3
 
-EXPOSE 8001
-EXPOSE 8002
+WORKDIR /app
 
-RUN echo "#!/bin/sh" > /usr/bin/open && \
-    echo "exit 0" >> /usr/bin/open &&\
-    chmod +x /usr/bin/open
+COPY . /app
 
 RUN npm install -g anyproxy@$ANYPROXY_VERSION
 
-RUN mkdir /anyproxy
-RUN anyproxy --root
+RUN cd ~ \
+  && mkdir .anyproxy \
+  && cd .anyproxy \
+  && mv /app/certificates ~/.anyproxy/ \
+  && cp ~/.anyproxy/certificates/rootCA.crt /usr/local/share/ca-certificates/ \
+  && update-ca-certificates
 
-#新版用下面的命令
-#RUN ["anyproxy-ca", "y"]
+# 修改时区
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+EXPOSE 8101 8104 8102
 
-CMD anyproxy -i --file /anyproxy/anyproxy.log
+CMD anyproxy -i --file /app/anyproxy.log
