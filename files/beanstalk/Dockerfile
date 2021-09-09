@@ -1,6 +1,6 @@
 FROM alpine
 
-ARG CHANGE_SOURCE=false
+ARG CHANGE_SOURCE=true
 RUN if [ ${CHANGE_SOURCE} = true ]; then \
     sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
 ;fi
