@@ -18,4 +18,4 @@ RUN cd ~ \
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 EXPOSE 8101 8104 8102
 
-CMD anyproxy -i --file /app/anyproxy.log
+#CMD anyproxy -i --rule sample.js --file /app/log/anyproxy.log
