@@ -1,17 +1,14 @@
 version: '3.2'
 services:
     php:
-        build: 
-            context: ./php
-            args:
-                - CHANGE_SOURCE=${CHANGE_SOURCE}
+        build: ./php
         image: php
         container_name: php
         expose:
             - "9000"
         ports:
             - "7272:7272" #workman聊天室
-            - "55151:55151" #workman聊天室    
+            - "55151:55151" #workman聊天室
         volumes:
             - ../../www:/data/www:rw
             - ./php/php.ini:/usr/local/etc/php/php.ini:ro # 当前php配置文件；可以拷贝修改php-dev.ini为想要的配置
@@ -20,9 +17,9 @@ services:
         restart: always
         command: php-fpm
         extra_hosts:
-          - "api.sas.test:192.168.56.101"
-          - "api.bmp.test:192.168.56.101"
-          - "api.mam.test:192.168.56.101"
+          - "api.sas.test:192.168.66.75"
+          - "api.bmp.test:192.168.66.75"
+          - "api.mam.test:192.168.66.75"
 
     nginx:
         build: ./nginx
@@ -44,7 +41,11 @@ services:
         command: nginx -g 'daemon off;'
 
     mysql:
-        build: ./mysql
+        build: 
+            context:
+                ./mysql
+            args:
+                - "--ignore-db-dir=lost+found"
         image: mysql
         container_name: mysql
         ports:
@@ -52,13 +53,22 @@ services:
         volumes:
             - ../data/mysql:/var/lib/mysql:rw
             - ../logs/mysql:/var/lib/mysql-logs:rw
-            - ./mysql/my.cnf:/etc/mysql/my.cnf:ro
+            - ./mysql/my.cnf:/etc/my.cnf:ro
+            - ../logs/mysql-files:/var/lib/mysql-files/
         environment:
-            MYSQL_ROOT_PASSWORD: root
+            MYSQL_ROOT_PASSWORD: root    
         restart: always
         depends_on:
             - php
-        command: "--character-set-server=utf8"
+        command:
+            --default-authentication-plugin=mysql_native_password
+            --character-set-server=utf8mb4
+            --collation-server=utf8mb4_general_ci
+            --explicit_defaults_for_timestamp=true
+            --lower_case_table_names=1
+            --innodb_use_native_aio=0
+        security_opt:
+            - seccomp:unconfined    
 
     redis:
         build: ./redis
@@ -84,6 +94,7 @@ services:
             - '6800:6800' #scrapyd
             - '8000:8000' #gerapy
             - '3000:3000' #gerapy
+            - '5000:5000'
         restart: always
         stdin_open: true
         tty: true
@@ -92,15 +103,11 @@ services:
             - redis
 
     beanstalk:
-        build: 
-            context: ./beanstalk
-            args:
-                - CHANGE_SOURCE=${CHANGE_SOURCE}
+        build: ./beanstalk
         image: beanstalk
         container_name: beanstalk
         ports:
             - "11300:11300"
-        restart: always
         privileged: true
         depends_on:
             - php   
@@ -110,15 +117,14 @@ services:
         image: golang
         container_name: golang
         ports:
-          - "8088:8088"
-        restart: always
+            - "8088:8088"
         links:
-          - mysql
-          - redis
+            - mysql
+            - redis
         volumes:
-          - ../../goCode:/go
-        tty: true         
-
+            - ../../goCode:/go
+        tty: true
+        
     # elasticsearch:
     #     build: ./elasticsearch
     #     image: elasticsearch
@@ -163,6 +169,32 @@ services:
     #     depends_on:
     #         - elasticsearch 
 
+    # nextcloud:
+    #     build: ./nextcloud
+    #     image: nextcloud
+    #     container_name: nextcloud
+    #     volumes:
+    #         - ../data/nextcloud:/var/www/html/data:rw
+    #         - ../../www/nextcloud:/var/www/html:rw
+    #     ports:
+    #         - 9700:80
+    #     links:
+    #         - mysql
+
+    # collabora:
+    #     build: ./collabora
+    #     container_name: collabora
+    #     ports:
+    #         - 9701:9980
+    #     environment:
+    #         - domain=pan\\.bjadks\\.com
+    #         - username=admin
+    #         - password=111111
+    #         - extra_params=--o:ssl.enable=false --o:ssl.termination=true
+    #     restart: always
+    #     cap_add:
+    #         - MKNOD
+
     # splash:
     #     image: scrapinghub/splash
     #     container_name: splash
@@ -174,64 +206,25 @@ services:
     #https://github.com/jhao104/proxy_pool
     #Workdir proxy_pool
     #docker build -t proxy_pool .
-    proxy_pool:
-        image: jhao104/proxy_pool
-        container_name: proxy_pool
-        ports:
-            - "5010:5010"
-        links:
-            - redis
-        environment:
-            DB_CONN: "redis://:111111@redis:6379/0"
-
-    # rabbitmq:
-    #     build: ./rabbitmq
-    #     image: rabbitmq
-    #     container_name: rabbitmq
+    # proxy_pool:
+    #     image: jhao104/proxy_pool
+    #     container_name: proxy_pool
     #     ports:
-    #         - "5672:5672"
-    #         - "15672:15672"
-    #     privileged: true
+    #         - "5010:5010"
+    #     links:
+    #         - redis
     #     environment:
-    #         - RABBITMQ_DEFAULT_USER=test
-    #         - RABBITMQ_DEFAULT_PASS=test
-    #     depends_on:
-    #         - php
+    #         DB_CONN: "redis://:111111@redis:6379/0"
 
-    # memcached:
-    #     build: ./memcached
-    #     image: memcached
-    #     container_name: memcached
-    #     volumes:
-    #         - ../data/memcached:/var/lib/memcached
-    #     ports:
-    #         - "11211:11211"
-    #     depends_on:
-    #         - php
-
-    # mongodb:
-    #     build: ./mongodb
-    #     image: mongodb
-    #     container_name: mongodb
-    #     ports:
-    #         - "27017:27017"
-    #     # # 要求磁盘必须非NTFS格式才可以
-    #     # volumes:
-    #     #     - ../data/mongo/configdb:/data/configdb
-    #     #     - ../data/mongo/db:/data/db
-    #     # command: mongod --auth
-    #     restart: always
-    #     stdin_open: true
-    #     tty: true
-    #     # depends_on:
-    #     #    - python
-
-    # anyproxy:
-    #     build: ./anyproxy
-    #     image: anyproxy
-    #     container_name: anyproxy
-    #     volumes:
-    #         - ../logs/anyproxy:/anyproxy:rw
-    #     ports:
-    #         - "8001:8001"
-    #         - "8002:8002"
+    anyproxy:
+        build: ./anyproxy
+        image: anyproxy
+        container_name: anyproxy
+        volumes:
+            - ../logs/anyproxy:/app/log:rw
+        restart: always
+        stdin_open: true
+        tty: true    
+        ports:
+            - "8001:8001"
+            - "8002:8002"
