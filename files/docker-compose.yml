@@ -18,8 +18,6 @@ services:
         command: php-fpm
         extra_hosts:
           - "api.sas.test:192.168.66.75"
-          - "api.bmp.test:192.168.66.75"
-          - "api.mam.test:192.168.66.75"
 
     nginx:
         build: ./nginx
@@ -220,11 +218,11 @@ services:
         build: ./anyproxy
         image: anyproxy
         container_name: anyproxy
-        volumes:
-            - ../logs/anyproxy:/app/log:rw
         restart: always
         stdin_open: true
         tty: true    
         ports:
             - "8001:8001"
             - "8002:8002"
+        links:
+            - redis    

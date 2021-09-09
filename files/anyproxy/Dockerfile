@@ -3,9 +3,14 @@ ENV ANYPROXY_VERSION=4.1.3
 
 WORKDIR /app
 
-COPY . /app
+RUN npm install -g anyproxy@$ANYPROXY_VERSION \
+  && npm install cheerio \
+  && npm install redis \
+  && npm install request-promise \
+  && npm install fs \
+  && npm install request
 
-RUN npm install -g anyproxy@$ANYPROXY_VERSION
+COPY . /app  
 
 RUN cd ~ \
   && mkdir .anyproxy \
@@ -17,5 +22,7 @@ RUN cd ~ \
 # 修改时区
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 EXPOSE 8101 8104 8102
+
+ENV NODE_PATH /usr/local/lib/node_modules
 
 #CMD anyproxy -i --rule sample.js --file /app/log/anyproxy.log

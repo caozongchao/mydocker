@@ -6,7 +6,7 @@ ENV TZ=Asia/Shanghai
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # 国内更改源
-ARG CHANGE_SOURCE=true
+ARG CHANGE_SOURCE=false
 RUN if [ ${CHANGE_SOURCE} = true ]; then \
     # Change application source from deb.debian.org to aliyun source
     sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list && \

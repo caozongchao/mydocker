@@ -1,27 +1,18 @@
 // 规则配置
 var config = {
-    host: 'http://127.0.0.1:8080', // 服务器地址配置
-    crawlHistory: true, // 是否采集列表历史数据
-    crawlArticle: true, // 是否采集文章数据
-    crawlComment: false, // 是否采集评论数据
-    crawlLikeReadNum: false, // 是否采集文章的阅读量及点赞量
-    autoNextScroll: true, // 是否自动下拉采取数据
-    autoNextPage: true, // 是否自动文章翻页
-    autoPostData: true, // 是否提交数据到服务器
+    localImg: true, // 公众号的图片返回本地图片
     m: 3000, // 自动下拉的时间间隔 m ~ n 秒之间
     n: 5000,
-    jumpInterval: 10, // 文章页跳转的时间间隔
-    saveContentType: 'html', // 微信文章保存内容的形式: html/text
-    localImg: true, // 公众号的图片返回本地图片
 };
 
 var url = require('url');
-var http = require('http');
 var querystring = require('querystring');
-var cheerio = require('cheerio');
-var rp = require('request-promise');
 var fs  = require("fs");
-var img = fs.readFileSync(__dirname + "/black.png")
+var img = fs.readFileSync(__dirname + "/black.png");
+
+var redis = require('redis');
+var redisClient = redis.createClient(6379, 'redis','111111');
+
 module.exports = {
     // 模块介绍
     summary: '微信公众号爬虫',
@@ -48,9 +39,6 @@ module.exports = {
 
             // 历史页面第一页数据
             if(/mp\/profile_ext\?action=home/i.test(link)){
-                if (!config.crawlHistory) {
-                    return null;
-                }
                 // 取得响应内容
                 var serverResData = responseDetail.response.body.toString();
                 // 取得公众号唯一标识biz
@@ -59,12 +47,8 @@ module.exports = {
                 // 取得微信公众号历史数据的第一页数据，包含公众号详情及最新的文章信息
                 var account = getAccount(biz, serverResData);
                 // 数据上传到服务器
-                serverPost(biz, account, '/spider/firstpage')
+                serverPost(account.articles)
 
-                // 判断是否自动下拉请求数据
-                if (!config.autoNextScroll) {
-                    return null;
-                }
                 // 根据返回的数据状态组装相应的自动滚动加载JS
                 var autoNextScrollJS = getAutoNextScrollJS();
 
@@ -78,42 +62,13 @@ module.exports = {
 
             // 向下翻页的数据的AJAX请求处理
             if(/mp\/profile_ext\?action=getmsg/i.test(link)){
-                if (!config.crawlHistory) {
-                    return null;
-                }
                 var biz = getBizByLink(link);
                 var content = JSON.parse(responseDetail.response.body.toString());
                 content = JSON.parse(content.general_msg_list);
 
                 var articles = getArticles(biz, content.list);
-                serverPost(biz, articles, '/spider/nextpage');
+                serverPost(articles);
                 return null;
-            }
-
-            // 文章页跳转
-            if (/\/s\?__biz/.test(link) || /mp\/appmsg\/show/.test(link)) {
-                if (!config.crawlArticle) {
-                    return null;
-                }
-                var content = responseDetail.response.body.toString();
-                var article = getArticle(link, content);
-                let bb = async function() {
-                    return await serverPost(article.biz, article, "/spider/updateArticleContent").then((nextLink) => {
-                        if (nextLink == undefined || nextLink == null || nextLink == '') {
-                            return null;
-                        }
-                        var autoNextPageMeta = getAutoNextPageMeta(nextLink);
-                        console.log(nextLink);
-
-                        // 修改返回的body内容，插入meta
-                        var newResponse = Object.assign({}, responseDetail.response);
-                        newResponse.body = content.replace('</title>', '</title>' + autoNextPageMeta);
-                        return {
-                            response: newResponse
-                        };
-                    });
-                }
-                return bb();
             }
             return null;
         } catch (e) {
@@ -131,28 +86,6 @@ module.exports = {
 function escape2Html(str){
     const arrEntities={'lt':'<','gt':'>','nbsp':' ','amp':'&','quot':'"'};
     return str.replace(/&(lt|gt|nbsp|amp|quot);/ig,function(all,t){return arrEntities[t];});
-}
-
-/**
- * 取得文章的详细信息, 通过biz,mid聚合主键找些此文章，更新文章内容
- *
- * @param link
- * @param responseDetail
- * @returns {{biz: *, mid: *, idx: *, content: (*|jQuery|string)}}
- */
-function getArticle(link, content) {
-    var $ = cheerio.load(content, { decodeEntities: false });
-    var identifier = querystring.parse(url.parse(link).query);
-    var articleContent = config.saveContentType=='html' ? $('#js_content').html() : $('#js_content').text();
-    if (articleContent == '') {
-        return null;
-    }
-    return {
-        biz: identifier.__biz,
-        mid: identifier.mid,
-        idx: identifier.idx,
-        content: articleContent
-    }
 }
 
 /**
@@ -236,32 +169,10 @@ function getMidAndIdx(link) {
 /**
  * 向服务上传抓取到的数据
  * @param data 数据
- * @param path 请求路径
  */
-function serverPost(biz, data, path) {
-    if (!config.autoPostData) {
-        return Promise.resolve().then(function(){
-            return null;
-        });
-    }
-    var options = {
-        method: 'POST',
-        uri: config.host + path,
-        form: {
-            biz: biz,
-            content: JSON.stringify(data)
-        },
-        json: true
-    };
-    return rp(options).then(function (parsedBody) {
-        if (parsedBody.code == 1) {
-            console.log('--' + path + '------------------------');
-            //console.log(data);
-            return parsedBody.data;
-        } else {
-            console.log('请求失败, 失败信息=' + parsedBody.message);
-            return null;
-        }
+function serverPost(data) {
+    redisClient.rpush('articles', JSON.stringify(data), function (err, reply) {
+        console.log(reply);
     });
 }
 
@@ -284,14 +195,4 @@ function getAutoNextScrollJS() {
     nextJS += '    })();';
     nextJS += '<\/script>';
     return nextJS;
-}
-
-/**
- * 自动跳转到下一文章页的meta
- *
- * @param nextLink
- * @returns {string}
- */
-function getAutoNextPageMeta(nextLink) {
-    return '<meta http-equiv="refresh" content="' + config.jumpInterval + ';url=' + nextLink + '" />';
 }
