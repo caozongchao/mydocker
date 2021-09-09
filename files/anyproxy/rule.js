@@ -11,7 +11,7 @@ var fs  = require("fs");
 var img = fs.readFileSync(__dirname + "/black.png");
 
 var redis = require('redis');
-var redisClient = redis.createClient(6379, 'redis','111111');
+var redisClient = redis.createClient('redis://111111@redis:6379/1');
 
 module.exports = {
     // 模块介绍
