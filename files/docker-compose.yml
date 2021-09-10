@@ -221,6 +221,8 @@ services:
         restart: always
         stdin_open: true
         tty: true
+        volumes:
+            - ./anyproxy:/app:rw
         ports:
             - "8001:8001"
             - "8002:8002"
