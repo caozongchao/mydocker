@@ -16,8 +16,8 @@ COPY . /app
 RUN cd ~ \
   && mkdir .anyproxy \
   && cd .anyproxy \
-  && cp -r /app/cert ~/.anyproxy/ \
-  && cp ~/.anyproxy/cert/rootCA.crt /usr/local/share/ca-certificates/ \
+  && cp -r /app/certificates ~/.anyproxy/ \
+  && cp ~/.anyproxy/certificates/rootCA.crt /usr/local/share/ca-certificates/ \
   && update-ca-certificates
 
 #anyproxy-ca

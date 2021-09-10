@@ -41,6 +41,9 @@ module.exports = {
             if(/mp\/profile_ext\?action=home/i.test(link)){
                 // 取得响应内容
                 var serverResData = responseDetail.response.body.toString();
+                console.log('<<<<<<<');
+                console.log(serverResData);
+                console.log('>>>>>>>');
                 // 取得公众号唯一标识biz
                 var biz = getBizByLink(link);
 
@@ -59,7 +62,6 @@ module.exports = {
                     response: newResponse
                 };
             }
-
             // 向下翻页的数据的AJAX请求处理
             if(/mp\/profile_ext\?action=getmsg/i.test(link)){
                 var biz = getBizByLink(link);
