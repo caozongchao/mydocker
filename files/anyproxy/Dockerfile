@@ -23,4 +23,4 @@ RUN cd ~ \
 #anyproxy-ca
 #cp /root/.anyproxy/certificates/rootCA.crt /usr/local/share/ca-certificates
 #update-ca-certificates
-#anyproxy -i --rule sample.js --file /app/anyproxy.log
+#anyproxy -i --ignore-unauthorized-ssl --rule sample.js --file /app/anyproxy.log
