@@ -11,7 +11,15 @@ RUN npm install -g anyproxy \
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 EXPOSE 8101 8104 8102
 
-#进入容器执行的命令
+COPY . /app
+
+RUN cd ~ \
+  && mkdir .anyproxy \
+  && cd .anyproxy \
+  && cp -r /app/cert ~/.anyproxy/ \
+  && cp ~/.anyproxy/cert/rootCA.crt /usr/local/share/ca-certificates/ \
+  && update-ca-certificates
+
 #anyproxy-ca
 #cp /root/.anyproxy/certificates/rootCA.crt /usr/local/share/ca-certificates
 #update-ca-certificates
