@@ -10,14 +10,7 @@ RUN npm install -g anyproxy@$ANYPROXY_VERSION \
   && npm install fs \
   && npm install request
 
-COPY . /app  
-
-RUN cd ~ \
-  && mkdir .anyproxy \
-  && cd .anyproxy \
-  && mv /app/certificates ~/.anyproxy/ \
-  && cp ~/.anyproxy/certificates/rootCA.crt /usr/local/share/ca-certificates/ \
-  && update-ca-certificates
+COPY . /app
 
 # 修改时区
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
@@ -25,4 +18,6 @@ EXPOSE 8101 8104 8102
 
 ENV NODE_PATH /usr/local/lib/node_modules
 
-#CMD anyproxy -i --rule sample.js --file /app/log/anyproxy.log
+#进入容器执行的命令
+#anyproxy-ca
+#anyproxy -i --rule sample.js --file /app/anyproxy.log
