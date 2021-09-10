@@ -15,4 +15,5 @@ EXPOSE 8101 8104 8102
 
 #进入容器执行的命令
 #anyproxy-ca
+#cp /root/.anyproxy/certificates/rootCA.crt /usr/local/share/ca-certificates
 #anyproxy -i --rule sample.js --file /app/anyproxy.log
