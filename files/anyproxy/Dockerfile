@@ -4,8 +4,8 @@ FROM node:14.17.6
 WORKDIR /app
 
 RUN npm install -g anyproxy \
-  && npm install redis \
-  && npm install fs
+  && npm install -g redis \
+  && npm install -g fs
 
 # 修改时区
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
