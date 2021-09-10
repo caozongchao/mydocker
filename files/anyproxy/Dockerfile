@@ -3,15 +3,15 @@ FROM node:14.17.6
 
 WORKDIR /app
 
-RUN npm install -g anyproxy \
-  && npm install -g redis \
-  && npm install -g fs
+COPY . /app
+
+RUN npm install -g anyproxy
+
+RUN npm install
 
 # 修改时区
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 EXPOSE 8101 8104 8102
-
-COPY . /app
 
 RUN cd ~ \
   && mkdir .anyproxy \
