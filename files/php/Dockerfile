@@ -70,14 +70,28 @@ WORKDIR /data
 # Write Permission
 RUN usermod -u 1000 www-data
 
+# 安装ffmpeg
+RUN apt-get update \
+  && apt-get install software-properties-common -y \
+  && apt-get install ffmpeg -y \
+  && apt-get install mediainfo -y
+
+#安装libreoffice
+# ADD pkg/fonts /opt/libreoffice7.1/share/fonts/truetype
+# ADD pkg/LibreOffice_7.1.4_Linux_x86-64_deb /data/pkg
+
+# RUN mkdir -p /usr/share/man/man1/
+
+# RUN apt-get remove -y libreoffice* && apt-get -y autoremove && apt-get update \
+#   && apt-get install -y lrzsz libxinerama1 libdbus-glib-1-2 libpangocairo-1.0-0 libcups2 libsm6 libx11-xcb1 default-jre libreoffice-java-common \
+#   && cd /data/pkg/LibreOffice_7.1.4.2_Linux_x86-64_deb/DEBS/ \
+#   && dpkg -i ./*.deb
+
+# RUN apt-get update && apt-get install -y sudo
+# ADD sudoers /etc/sudoers
+# RUN chmod 440 /etc/sudoers && rm -rf /usr/bin/libreoffice && ln -sv  /usr/local/bin/libreoffice7.1 /usr/bin/libreoffice
+
 # Clean up
 RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     rm /var/log/lastlog /var/log/faillog
-
-# libreoffice
-#RUN apt-get update && \
-#    apt-get install -y lrzsz libxinerama1 libdbus-glib-1-2 libpangocairo-1.0-0 libcups2 libsm6 libx11-xcb1 default-jre libreoffice-java-common && \
-#    cd /data/pkg/LibreOffice_7.1.4.2_Linux_x86-64_deb/DEBS/ && \
-#    dpkg -i ./*.deb && \
-#    rm -rf /var/lib/apt/lists/* /data/pkg
