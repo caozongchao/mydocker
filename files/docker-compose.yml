@@ -1,14 +1,17 @@
 version: '3.2'
 services:
     php:
-        build: ./php
+        build: 
+            context: ./php
+            args:
+                - CHANGE_SOURCE=${CHANGE_SOURCE}
         image: php
         container_name: php
         expose:
             - "9000"
         ports:
             - "7272:7272" #workman聊天室
-            - "55151:55151" #workman聊天室
+            - "55151:55151" #workman聊天室    
         volumes:
             - ../../www:/data/www:rw
             - ./php/php.ini:/usr/local/etc/php/php.ini:ro # 当前php配置文件；可以拷贝修改php-dev.ini为想要的配置
@@ -17,7 +20,9 @@ services:
         restart: always
         command: php-fpm
         extra_hosts:
-          - "api.sas.test:192.168.66.75"
+          - "api.sas.test:192.168.56.101"
+          - "api.bmp.test:192.168.56.101"
+          - "api.mam.test:192.168.56.101"
 
     nginx:
         build: ./nginx
@@ -34,16 +39,10 @@ services:
         ports:
             - "80:80" #宿主端口：容器端口
         restart: always
-        depends_on:
-            - php
         command: nginx -g 'daemon off;'
 
     mysql:
-        build: 
-            context:
-                ./mysql
-            args:
-                - "--ignore-db-dir=lost+found"
+        build: ./mysql
         image: mysql
         container_name: mysql
         ports:
@@ -51,22 +50,11 @@ services:
         volumes:
             - ../data/mysql:/var/lib/mysql:rw
             - ../logs/mysql:/var/lib/mysql-logs:rw
-            - ./mysql/my.cnf:/etc/my.cnf:ro
-            - ../logs/mysql-files:/var/lib/mysql-files/
+            - ./mysql/my.cnf:/etc/mysql/my.cnf:ro
         environment:
-            MYSQL_ROOT_PASSWORD: root    
+            MYSQL_ROOT_PASSWORD: root
         restart: always
-        depends_on:
-            - php
-        command:
-            --default-authentication-plugin=mysql_native_password
-            --character-set-server=utf8mb4
-            --collation-server=utf8mb4_general_ci
-            --explicit_defaults_for_timestamp=true
-            --lower_case_table_names=1
-            --innodb_use_native_aio=0
-        security_opt:
-            - seccomp:unconfined    
+        command: "--character-set-server=utf8"
 
     redis:
         build: ./redis
@@ -77,8 +65,6 @@ services:
         volumes:
             - ../data/redis:/data
         restart: always
-        depends_on:
-            - php
 
     python:
         build: ./python
@@ -92,7 +78,6 @@ services:
             - '6800:6800' #scrapyd
             - '8000:8000' #gerapy
             - '3000:3000' #gerapy
-            - '5000:5000'
         restart: always
         stdin_open: true
         tty: true
@@ -101,28 +86,31 @@ services:
             - redis
 
     beanstalk:
-        build: ./beanstalk
+        build: 
+            context: ./beanstalk
+            args:
+                - CHANGE_SOURCE=${CHANGE_SOURCE}
         image: beanstalk
         container_name: beanstalk
         ports:
             - "11300:11300"
+        restart: always
         privileged: true
-        depends_on:
-            - php   
 
     golang:
         build: ./golang
         image: golang
         container_name: golang
         ports:
-            - "8088:8088"
+          - "8088:8088"
+        restart: always
         links:
-            - mysql
-            - redis
+          - mysql
+          - redis
         volumes:
-            - ../../goCode:/go
-        tty: true
-        
+          - ../../goCode:/go
+        tty: true         
+
     # elasticsearch:
     #     build: ./elasticsearch
     #     image: elasticsearch
@@ -140,8 +128,6 @@ services:
     #             hard: -1
     #     ports:
     #         - "9200:9200"
-    #     depends_on:
-    #         - php
 
     # elasticsearch-head:
     #     image: mobz/elasticsearch-head:5
@@ -165,33 +151,7 @@ services:
     #     environment:
     #         LS_JAVA_OPTS: "-Xmx256m -Xms256m"
     #     depends_on:
-    #         - elasticsearch 
-
-    # nextcloud:
-    #     build: ./nextcloud
-    #     image: nextcloud
-    #     container_name: nextcloud
-    #     volumes:
-    #         - ../data/nextcloud:/var/www/html/data:rw
-    #         - ../../www/nextcloud:/var/www/html:rw
-    #     ports:
-    #         - 9700:80
-    #     links:
-    #         - mysql
-
-    # collabora:
-    #     build: ./collabora
-    #     container_name: collabora
-    #     ports:
-    #         - 9701:9980
-    #     environment:
-    #         - domain=pan\\.bjadks\\.com
-    #         - username=admin
-    #         - password=111111
-    #         - extra_params=--o:ssl.enable=false --o:ssl.termination=true
-    #     restart: always
-    #     cap_add:
-    #         - MKNOD
+    #         - elasticsearch
 
     # splash:
     #     image: scrapinghub/splash
@@ -201,9 +161,6 @@ services:
     #         - "5023:5023"
     #     restart: always
 
-    #https://github.com/jhao104/proxy_pool
-    #Workdir proxy_pool
-    #docker build -t proxy_pool .
     # proxy_pool:
     #     image: jhao104/proxy_pool
     #     container_name: proxy_pool
@@ -213,3 +170,108 @@ services:
     #         - redis
     #     environment:
     #         DB_CONN: "redis://:111111@redis:6379/0"
+
+    # rabbitmq:
+    #     build: ./rabbitmq
+    #     image: rabbitmq
+    #     container_name: rabbitmq
+    #     ports:
+    #         - "5672:5672"
+    #         - "15672:15672"
+    #     privileged: true
+    #     environment:
+    #         - RABBITMQ_DEFAULT_USER=test
+    #         - RABBITMQ_DEFAULT_PASS=test
+
+    # memcached:
+    #     build: ./memcached
+    #     image: memcached
+    #     container_name: memcached
+    #     volumes:
+    #         - ../data/memcached:/var/lib/memcached
+    #     ports:
+    #         - "11211:11211"
+
+    # mongodb:
+    #     build: ./mongodb
+    #     image: mongodb
+    #     container_name: mongodb
+    #     ports:
+    #         - "27017:27017"
+    #     # # 要求磁盘必须非NTFS格式才可以
+    #     # volumes:
+    #     #     - ../data/mongo/configdb:/data/configdb
+    #     #     - ../data/mongo/db:/data/db
+    #     # command: mongod --auth
+    #     restart: always
+    #     stdin_open: true
+    #     tty: true
+
+    # anyproxy:
+    #     build: ./anyproxy
+    #     image: anyproxy
+    #     container_name: anyproxy
+    #     volumes:
+    #         - ../logs/anyproxy:/anyproxy:rw
+    #     ports:
+    #         - "8001:8001"
+    #         - "8002:8002"
+
+    # rmqnamesrv:
+    #     image: foxiswho/rocketmq:server
+    #     container_name: rmqnamesrv
+    #     restart: always
+    #     ports:
+    #         - 9876:9876
+    #     volumes:
+    #         - ../logs/rocketmq/rmqnamesrv:/opt/logs
+    #         - ../data/rocketmq/rmqnamesrv:/opt/store
+          
+    # rmqbroker:
+    #     image: foxiswho/rocketmq:broker
+    #     container_name: rmqbroker
+    #     restart: always
+    #     depends_on:
+    #         - rmqnamesrv
+    #     ports:
+    #         - 10909:10909
+    #         - 10911:10911
+    #     volumes:
+    #         - ../logs/rocketmq/broker:/opt/logs
+    #         - ../data/rocketmq/broker:/opt/store
+    #         - ./rocketmq/broker.conf:/etc/rocketmq/broker.conf
+    #     environment:
+    #         NAMESRV_ADDR: "rmqnamesrv:9876"
+    #         JAVA_OPTS: " -Duser.home=/opt"
+    #         JAVA_OPT_EXT: "-server -Xms128m -Xmx128m -Xmn128m"
+    #     command: mqbroker -c /etc/rocketmq/broker.conf
+          
+    # rmqconsole:
+    #     image: styletang/rocketmq-console-ng
+    #     container_name: rmqconsole
+    #     restart: always
+    #     ports:
+    #         - 9877:8080
+    #     depends_on:
+    #         - rmqnamesrv
+    #     environment:
+    #         JAVA_OPTS: "-Drocketmq.namesrv.addr=rmqnamesrv:9876 -Dcom.rocketmq.sendMessageWithVIPChannel=false"
+
+    # nacos:
+    #     image: nacos/nacos-server:latest
+    #     container_name: nacos
+    #     privileged: true
+    #     env_file:
+    #         - ./nacos/.env
+    #     volumes:
+    #         - ../logs/nacos:/home/nacos/logs
+    #         - ./nacos/custom.properties:/home/nacos/init.d/custom.properties
+    #     ports:
+    #         - "7848:7848"
+    #         - "8848:8848"
+    #         - "9848:9848"
+    #         - "9555:9555"
+    #         - "9849:9849"
+    #     external_links:
+    #         - mysql
+    #     restart: on-failure

@@ -23,12 +23,3 @@ pyppeteer>=0.0.25
 
 scrapyd
 scrapyd-client
-
-werkzeug==0.15.3
-Flask==1.0
-PyExecJS==1.5.1
-click==7.0
-gunicorn==19.9.0
-lxml
-
-fake-useragent
