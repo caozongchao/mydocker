@@ -287,4 +287,4 @@ services:
     #     ports:
     #         - 8989:8080
     #     volumes:
-    #         - ./data/xxljob:/data/applogs
+    #         - ../data/xxljob:/data/applogs
