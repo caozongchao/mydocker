@@ -42,7 +42,11 @@ services:
         command: nginx -g 'daemon off;'
 
     mysql:
-        build: ./mysql
+        build: 
+            context:
+                ./mysql
+            args:
+                - "--ignore-db-dir=lost+found"
         image: mysql
         container_name: mysql
         ports:
@@ -50,11 +54,20 @@ services:
         volumes:
             - ../data/mysql:/var/lib/mysql:rw
             - ../logs/mysql:/var/lib/mysql-logs:rw
-            - ./mysql/my.cnf:/etc/mysql/my.cnf:ro
+            - ./mysql/my.cnf:/etc/my.cnf:ro
+            - ../logs/mysql-files:/var/lib/mysql-files/
         environment:
             MYSQL_ROOT_PASSWORD: root
         restart: always
-        command: "--character-set-server=utf8"
+        command:
+            --default-authentication-plugin=mysql_native_password
+            --character-set-server=utf8mb4
+            --collation-server=utf8mb4_general_ci
+            --explicit_defaults_for_timestamp=true
+            --lower_case_table_names=1
+            --innodb_use_native_aio=0
+        security_opt:
+            - seccomp:unconfined
 
     redis:
         build: ./redis
