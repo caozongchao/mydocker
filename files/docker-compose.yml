@@ -21,7 +21,6 @@ services:
         command: php-fpm
         extra_hosts:
           - "api.sas.test:192.168.56.101"
-          - "api.bmp.test:192.168.56.101"
           - "api.mam.test:192.168.56.101"
 
     nginx:
