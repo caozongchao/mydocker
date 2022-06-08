@@ -301,28 +301,31 @@ services:
     #     volumes:
     #         - ../data/xxljob:/data/applogs
     
-    zero:
-        image: dgraph/dgraph:v21.12.0
-        volumes:
-            - ../data/dgraph:/dgraph
-        ports:
-            - 22145:5080
-            - 22146:6080
-        restart: on-failure
-        command: dgraph zero --my=zero:5080
+    # zero:
+    #     image: dgraph/dgraph:v21.12.0
+    #     container_name: dgraph_zero
+    #     volumes:
+    #         - ../data/dgraph:/dgraph
+    #     ports:
+    #         - 22145:5080
+    #         - 22146:6080
+    #     restart: on-failure
+    #     command: dgraph zero --my=zero:5080
 
-    alpha:
-        image: dgraph/dgraph:v21.12.0
-        volumes:
-            - ../data/dgraph:/dgraph
-        ports:
-            - 22147:8080
-            - 22148:9080
-        restart: on-failure
-        command: dgraph alpha --security whitelist=0.0.0.0/0 --my=alpha:7080 --zero=zero:5080
+    # alpha:
+    #     image: dgraph/dgraph:v21.12.0
+    #     container_name: dgraph_server
+    #     volumes:
+    #         - ../data/dgraph:/dgraph
+    #     ports:
+    #         - 22147:8080
+    #         - 22148:9080
+    #     restart: on-failure
+    #     command: dgraph alpha --security whitelist=0.0.0.0/0 --my=alpha:7080 --zero=zero:5080
 
-    ratel:
-        image: dgraph/ratel:v21.12.0
-        ports:
-            - 22149:8000
-        command: dgraph-ratel
+    # ratel:
+    #     image: dgraph/ratel:v21.12.0
+    #     container_name: dgraph_ratel
+    #     ports:
+    #         - 22149:8000
+    #     command: dgraph-ratel
