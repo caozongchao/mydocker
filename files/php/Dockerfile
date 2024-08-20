@@ -34,6 +34,7 @@ RUN apt-get update \
 #     && docker-php-ext-enable swoole
 
 # COPY swoole_loader72.so /usr/local/lib/php/extensions/no-debug-non-zts-20170718
+
 COPY docker-php-ext-xdebug.ini /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 
 #安装composer
@@ -52,16 +53,16 @@ RUN apt-get update \
   && apt-get install ffmpeg -y \
   && apt-get install mediainfo -y
 
-ADD pkg/fonts /opt/libreoffice7.1/share/fonts/truetype
-ADD pkg/LibreOffice_7.1.4_Linux_x86-64_deb /data/pkg
+# ADD pkg/fonts /opt/libreoffice7.1/share/fonts/truetype
+# ADD pkg/LibreOffice_7.1.4_Linux_x86-64_deb /data/pkg
 
-RUN mkdir -p /usr/share/man/man1/
+# RUN mkdir -p /usr/share/man/man1/
 
-RUN apt-get remove -y libreoffice* && apt-get -y autoremove && apt-get update \
-  && apt-get install -y lrzsz libxinerama1 libdbus-glib-1-2 libpangocairo-1.0-0 libcups2 libsm6 libx11-xcb1 default-jre libreoffice-java-common \
-  && cd /data/pkg/LibreOffice_7.1.4.2_Linux_x86-64_deb/DEBS/ \
-  && dpkg -i ./*.deb
-#   && rm -rf /var/lib/apt/lists/* /data/pkg
+# RUN apt-get remove -y libreoffice* && apt-get -y autoremove && apt-get update \
+#   && apt-get install -y lrzsz libxinerama1 libdbus-glib-1-2 libpangocairo-1.0-0 libcups2 libsm6 libx11-xcb1 default-jre libreoffice-java-common \
+#   && cd /data/pkg/LibreOffice_7.1.4.2_Linux_x86-64_deb/DEBS/ \
+#   && dpkg -i ./*.deb
+# #   && rm -rf /var/lib/apt/lists/* /data/pkg
 
 RUN apt-get update && apt-get install -y sudo
 ADD sudoers /etc/sudoers
