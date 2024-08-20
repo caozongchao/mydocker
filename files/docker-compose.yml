@@ -78,24 +78,24 @@ services:
             - ../data/redis:/data
         restart: always
 
-    python:
-        build: ./python
-        image: python
-        container_name: python
-        volumes:
-            - ../../pythonCode:/usr/src/app:rw
-            - ../logs/scrapyd:/usr/src/app/scrapyd/logs:rw
-        ports:
-            # - '81:81'
-            - '6800:6800' #scrapyd
-            - '8000:8000' #gerapy
-            - '3000:3000' #gerapy
-        restart: always
-        stdin_open: true
-        tty: true
-        links:
-            - mysql
-            - redis
+    # python:
+    #     build: ./python
+    #     image: python
+    #     container_name: python
+    #     volumes:
+    #         - ../../pythonCode:/usr/src/app:rw
+    #         - ../logs/scrapyd:/usr/src/app/scrapyd/logs:rw
+    #     ports:
+    #         # - '81:81'
+    #         - '6800:6800' #scrapyd
+    #         - '8000:8000' #gerapy
+    #         - '3000:3000' #gerapy
+    #     restart: always
+    #     stdin_open: true
+    #     tty: true
+    #     links:
+    #         - mysql
+    #         - redis
 
     beanstalk:
         build: 
@@ -109,19 +109,19 @@ services:
         restart: always
         privileged: true
 
-    golang:
-        build: ./golang
-        image: golang
-        container_name: golang
-        ports:
-          - "8088:8088"
-        restart: always
-        links:
-          - mysql
-          - redis
-        volumes:
-          - ../../goCode:/go
-        tty: true         
+    # golang:
+    #     build: ./golang
+    #     image: golang
+    #     container_name: golang
+    #     ports:
+    #       - "8088:8088"
+    #     restart: always
+    #     links:
+    #       - mysql
+    #       - redis
+    #     volumes:
+    #       - ../../goCode:/go
+    #     tty: true
 
     # elasticsearch:
     #     build: ./elasticsearch
